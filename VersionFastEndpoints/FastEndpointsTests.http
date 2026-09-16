@@ -1,0 +1,91 @@
+@host = https://localhost:7268
+@contentType = application/json
+
+### 1. Create - Valid (expect 201 + Location header)
+POST {{host}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Laptop",
+  "price": 1200.50
+}
+
+### 2. Create - Invalid: empty name (expect 400)
+POST {{host}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "",
+  "price": 1200.50
+}
+
+### 3. Create - Invalid: negative price (expect 400)
+POST {{host}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Tablet",
+  "price": -50
+}
+
+### 4. Create - Second product (expect 201)
+POST {{host}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Keyboard",
+  "price": 75.00
+}
+
+### 5. Get All (expect 200 + array)
+GET {{host}}/api/products
+Accept: {{contentType}}
+
+### 6. Get By Id - Exists (expect 200)
+GET {{host}}/api/products/1
+Accept: {{contentType}}
+
+### 7. Get By Id - Missing (expect 404)
+GET {{host}}/api/products/9999
+Accept: {{contentType}}
+
+### 8. Update - Valid (expect 204)
+PUT {{host}}/api/products/1
+Content-Type: {{contentType}}
+
+{
+  "name": "Gaming Laptop",
+  "price": 1500.00
+}
+
+### 9. Update - Invalid: empty name (expect 400)
+PUT {{host}}/api/products/1
+Content-Type: {{contentType}}
+
+{
+  "name": "",
+  "price": 1500.00
+}
+
+### 10. Update - Missing id (expect 404)
+PUT {{host}}/api/products/9999
+Content-Type: {{contentType}}
+
+{
+  "name": "Ghost",
+  "price": 10.00
+}
+
+### 11. Verify Update (expect 200 + updated data)
+GET {{host}}/api/products/1
+Accept: {{contentType}}
+
+### 12. Delete - Exists (expect 204)
+DELETE {{host}}/api/products/2
+
+### 13. Delete - Missing (expect 404)
+DELETE {{host}}/api/products/9999
+
+### 14. Verify Delete (expect 404)
+GET {{host}}/api/products/2
+Accept: {{contentType}}

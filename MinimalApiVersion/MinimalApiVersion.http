@@ -1,0 +1,28 @@
+@MinimalApiVersion_HostAddress = http://localhost:5045
+
+### Create
+POST {{MinimalApiVersion_HostAddress}}/api/products
+Content-Type: application/json
+
+{
+  "name": "Laptop",
+  "price": 1200.50
+}
+
+### Get All
+GET {{MinimalApiVersion_HostAddress}}/api/products
+
+### Get By Id
+GET {{MinimalApiVersion_HostAddress}}/api/products/1
+
+### Update
+PUT {{MinimalApiVersion_HostAddress}}/api/products/1
+Content-Type: application/json
+
+{
+  "name": "Gaming Laptop",
+  "price": 1500.00
+}
+
+### Delete
+DELETE {{MinimalApiVersion_HostAddress}}/api/products/2
