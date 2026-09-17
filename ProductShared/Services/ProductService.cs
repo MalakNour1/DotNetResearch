@@ -60,7 +60,7 @@ public class ProductService : IProductService
 
         if (product is null)
         {
-            // Log at Warning level — this is an expected but notable event
+            // Log at Warning level this is an expected but notable event
             _logger.LogWarning("Product {ProductId} not found", id);
             return null;
         }

@@ -19,7 +19,7 @@ public class CreateProductEndpoint : Endpoint<ProductRequestDto, ProductResponse
         AllowAnonymous();
     }
 
-    public override async Task HandleAsync(
+    public override async Task HandleAsync( // the place where you implement the request handling logic.
         ProductRequestDto req,
         CancellationToken ct)
     {
