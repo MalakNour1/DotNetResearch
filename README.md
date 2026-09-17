@@ -23,6 +23,7 @@ A side-by-side implementation of the **same Product CRUD API** built two ways on
 - [API Reference](#api-reference)
 - [Architecture & Design Decisions](#architecture--design-decisions)
 - [FastEndpoints Implementation Notes](#fastendpoints-implementation-notes)
+- [Testing with Postman](#testing-with-postman)
 - [Submission Evidence](#submission-evidence)
 - [Lessons Learned](#lessons-learned)
 - [Minimal API vs. FastEndpoints vs. Controllers](#minimal-api-vs-fastendpoints-vs-controllers)
@@ -88,6 +89,10 @@ DotNETResearch/
 │   ├── FastEndpointsTests.http
 │   └── Program.cs
 │
+├── postman/                        # Exported Postman collection & environment
+│   ├── ProductApi.postman_collection.json
+│   └── ProductApi.postman_environment.json
+│
 └── README.md
 ```
 
@@ -106,7 +111,7 @@ DotNETResearch/
 | Secrets (dev) | ASP.NET Core Secret Manager (User Secrets) |
 | Transport security | Kestrel + ASP.NET Core HTTPS dev certificate |
 | Logging | `Microsoft.Extensions.Logging` (`ILogger<T>`) |
-| API testing | Postman (collection exported) |
+| API testing | Postman (collection + environment exported) |
 
 ---
 
@@ -280,6 +285,17 @@ await Send.NotFoundAsync(ct);                                      // 404
 **Validation** uses `FluentValidation` validators (`CreateProductValidator`, `UpdateProductValidator`) auto-discovered by FastEndpoints. If validation fails, a `400 Bad Request` is returned automatically — no manual checks inside the endpoint.
 
 **No Swagger** — the `FastEndpoints.Swagger` package is not installed and no Swagger middleware is configured.
+
+---
+
+## Testing with Postman
+
+The `/postman` folder contains the exported Postman assets:
+
+- **`ProductApi.postman_collection.json`** — one request per CRUD operation, plus at least one invalid example to exercise the `400` and `404` paths.
+- **`ProductApi.postman_environment.json`** — environment with a `baseUrl` variable, switched between the Minimal API and FastEndpoints URLs to run the same requests against both.
+
+Import both files, select the environment, set `baseUrl`, and run the collection.
 
 ---
 
