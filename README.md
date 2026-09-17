@@ -3,10 +3,11 @@
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![EF Core](https://img.shields.io/badge/EF%20Core-SQL%20Server-CC2927?logo=microsoftsqlserver&logoColor=white)](https://learn.microsoft.com/ef/core/)
 [![FastEndpoints](https://img.shields.io/badge/FastEndpoints-REPR%20Pattern-2E8B57)](https://fast-endpoints.com/)
+[![Postman](https://img.shields.io/badge/Tested%20with-Postman-FF6C37?logo=postman&logoColor=white)](https://www.postman.com/)
 
 A side-by-side implementation of the **same Product CRUD API** built two ways on **.NET 10** — once as a plain **Minimal API**, and once with **FastEndpoints** — sharing the same EF Core model, business rules, and HTTP contract.
 
-> No Swagger/OpenAPI UI is included by design. Endpoints are exercised via the included `.http` files (Rider / VS Code / Visual Studio HTTP Client).
+> No Swagger/OpenAPI UI is included by design. Endpoints are exercised via the included `.http` files and the exported Postman collection.
 
 ---
 
@@ -22,8 +23,10 @@ A side-by-side implementation of the **same Product CRUD API** built two ways on
 - [API Reference](#api-reference)
 - [Architecture & Design Decisions](#architecture--design-decisions)
 - [FastEndpoints Implementation Notes](#fastendpoints-implementation-notes)
+- [Submission Evidence](#submission-evidence)
 - [Lessons Learned](#lessons-learned)
 - [Minimal API vs. FastEndpoints vs. Controllers](#minimal-api-vs-fastendpoints-vs-controllers)
+- [Final Recommendation](#final-recommendation)
 
 ---
 
@@ -70,20 +73,22 @@ DotNETResearch/
 │       ├── IProductService.cs
 │       └── ProductService.cs
 │
-└── VersionFastEndpoints/           # FastEndpoints project
-    ├── Endpoints/
-    │   └── Products/
-    │       ├── CreateProductEndpoint.cs
-    │       ├── GetAllProductsEndpoint.cs
-    │       ├── GetProductByIdEndpoint.cs
-    │       ├── UpdateProductEndpoint.cs
-    │       ├── DeleteProductEndpoint.cs
-    │       └── Validators/
-    │           ├── CreateProductValidator.cs
-    │           └── UpdateProductValidator.cs
-    ├── appsettings.json
-    ├── FastEndpointsTests.http
-    └── Program.cs
+├── VersionFastEndpoints/           # FastEndpoints project
+│   ├── Endpoints/
+│   │   └── Products/
+│   │       ├── CreateProductEndpoint.cs
+│   │       ├── GetAllProductsEndpoint.cs
+│   │       ├── GetProductByIdEndpoint.cs
+│   │       ├── UpdateProductEndpoint.cs
+│   │       ├── DeleteProductEndpoint.cs
+│   │       └── Validators/
+│   │           ├── CreateProductValidator.cs
+│   │           └── UpdateProductValidator.cs
+│   ├── appsettings.json
+│   ├── FastEndpointsTests.http
+│   └── Program.cs
+│
+└── README.md
 ```
 
 ---
@@ -101,6 +106,7 @@ DotNETResearch/
 | Secrets (dev) | ASP.NET Core Secret Manager (User Secrets) |
 | Transport security | Kestrel + ASP.NET Core HTTPS dev certificate |
 | Logging | `Microsoft.Extensions.Logging` (`ILogger<T>`) |
+| API testing | Postman (collection exported) |
 
 ---
 
@@ -206,7 +212,7 @@ public record ProductRequestDto(string Name, decimal Price);
 public record ProductResponseDto(int Id, string Name, decimal Price, DateTime CreatedAtUtc);
 ```
 
-In the FastEndpoints project, `UpdateProductRequest` and `DeleteProductRequest` are local request classes that combine the route `Id` with the body fields, since FastEndpoints binds route + body into a single request DTO.
+In the FastEndpoints project, `UpdateProductRequest` and `DeleteProductRequest` are local request classes combining the route `Id` with the body fields, since FastEndpoints binds route + body into a single request DTO.
 
 ---
 
@@ -277,6 +283,33 @@ await Send.NotFoundAsync(ct);                                      // 404
 
 ---
 
+## Submission Evidence
+
+This section documents the assignment's final restrictions.
+
+### ✅ No secret was committed
+
+- All connection strings are stored via **User Secrets** (`dotnet user-secrets`), which live outside the repository at `%APPDATA%\Microsoft\UserSecrets\`.
+- `appsettings.json` and `appsettings.Development.json` contain only non-sensitive defaults (logging, allowed hosts).
+- Verification (run at repo root):
+  ```bash
+  git log --all -p -- appsettings.json appsettings.Development.json | grep -i "connectionstring"
+  ```
+  Expected output: no matches.
+
+### ✅ No Swagger / OpenAPI package or middleware
+
+- `MinimalApiVersion.csproj` — no `Swashbuckle`, `NSwag`, or `Microsoft.AspNetCore.OpenApi` package references.
+- `VersionFastEndpoints.csproj` — no `FastEndpoints.Swagger` package reference.
+- Neither `Program.cs` calls `AddSwaggerGen()`, `UseSwagger()`, `UseSwaggerUI()`, or `MapOpenApi()`.
+- Verification (run at repo root):
+  ```bash
+  grep -ri "swagger\|openapi" --include="*.csproj" --include="Program.cs" .
+  ```
+  Expected output: no matches.
+
+---
+
 ## Lessons Learned
 
 - **Framework naming collisions are real.** FastEndpoints silently failed to discover endpoints because the project folder was named `FastEndpointsVersion`. Renaming to `VersionFastEndpoints` resolved it.
@@ -289,15 +322,13 @@ await Send.NotFoundAsync(ct);                                      // 404
 
 | Criterion | Minimal APIs | FastEndpoints | Controllers |
 |---|---|---|---|
-| **Endpoint registration** | `app.MapPost(...)` lambdas in `Program.cs` | Endpoint classes auto-discovered via `AddFastEndpoints()` | Attribute-routed classes via `AddControllers()` |
+| **Routing** | `app.MapPost(...)` lambdas in `Program.cs` | Endpoint classes auto-discovered via `AddFastEndpoints()` | Attribute-routed classes via `AddControllers()` |
 | **Dependency injection** | Resolved in the delegate signature | Constructor injection per endpoint class | Constructor injection per controller |
-| **Request binding** | Inferred from parameter types | Automatic across route / query / body into one DTO | MVC model binding |
 | **Validation** | Manual | Built-in FluentValidation, auto-discovered | Data Annotations / FluentValidation via filters |
-| **Filters / processors** | `IEndpointFilter` | Pre/Post processors | Action filters |
-| **Response handling** | `Results.*` / `TypedResults.*` | `Send.*` methods | `ActionResult` / `IActionResult` |
-| **Fewest dependencies** | ✅ Ships in the shared framework | Requires `FastEndpoints` + FluentValidation packages | Ships in ASP.NET Core, larger MVC subsystem |
-| **Strongest convention** | — | ✅ One class per use case, enforced by design | Structured, but less prescriptive per action |
-| **Third-party dependency risk** | — | Community-maintained package outside Microsoft's release cadence | — |
+| **Organization** | Flat, grouped by mapping calls | One class per use case (REPR / vertical slice) | One class per resource |
+| **Dependencies** | ✅ Ships in the shared framework | Requires `FastEndpoints` + FluentValidation packages | Ships in ASP.NET Core, larger MVC subsystem |
+| **Best use cases** | Small services, prototypes, micro-endpoints | Vertical-slice apps, feature-organized codebases | Large, established systems with team-wide familiarity |
+| **Trade-offs** | No enforced structure; can grow into a wall of lambdas | Adds a third-party dependency; team must learn the library | More boilerplate; heavier MVC subsystem |
 
 **Best fit:**
 
@@ -305,4 +336,12 @@ await Send.NotFoundAsync(ct);                                      // 404
 - **Vertical-slice application** → FastEndpoints. Its one-class-per-use-case design *is* the pattern.
 - **Existing controller-based system** → Controllers. Team familiarity and ecosystem consistency outweigh switching costs.
 
-This isn't a performance call — all three are fast enough. It comes down to maintainability, team familiarity, testing support, ecosystem maturity, and project size.
+---
+
+## Final Recommendation
+
+For this assignment's scope — a single-resource CRUD API — **Minimal APIs** were sufficient and required the least ceremony.
+
+For a project expected to grow into many resources maintained by multiple contributors, **FastEndpoints** is the stronger long-term choice: it delivers Minimal-API-level performance while enforcing the one-class-per-use-case discipline that a growing codebase eventually needs anyway, without pulling in the heavier MVC subsystem.
+
+This is a maintainability and team-fit decision, not a performance one — all three styles are fast enough for typical APIs.
